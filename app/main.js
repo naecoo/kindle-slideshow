@@ -1,10 +1,10 @@
 /* Slideshow for Kindle — fullscreen screensaver image rotator.
    The screen shows nothing but the photo: tap once to reveal the
    bookmark handle, which auto-hides after a few idle seconds.
-   Every window.kindle call is guarded so the app also runs in a
-   desktop browser for development. */
+   UI strings come from i18n.js (default English); every window.kindle
+   call is guarded so the app also runs in a desktop browser. */
 
-/* global window, document */
+/* global window, document, I18N */
 
 var APP_ID = "org.slideshow.kindle";
 var DEFAULT_DIR = "/mnt/us/screensaver/";
@@ -14,6 +14,8 @@ var MAX_INTERVAL = 600;
 var HANDLE_HIDE_MS = 5000;   // idle delay before the bookmark disappears
 var CORNER_W = 140;          // tap zone that opens settings
 var CORNER_H = 120;
+
+var t = window.I18N.t;
 
 var settings = {
     interval: 10,      // seconds
@@ -28,6 +30,7 @@ var handleHideTimer = null;
 var dirOverride = null; // ?dir= for development
 var lastTapAt = 0;      // debounce: DOM click + kindle.gestures.ontap
 var consecutiveErrors = 0; // broken files are skipped, not stared at
+var statusMsg = null;   // { key, vars, isError } — re-rendered on lang change
 
 /* ---------------------------------------------------------------- utils */
 
@@ -35,10 +38,11 @@ function $(id) {
     return document.getElementById(id);
 }
 
-function setStatus(text, isError) {
+function setStatus(key, vars, isError) {
+    statusMsg = { key: key, vars: vars, isError: !!isError };
     var el = $("status");
     if (!el) return;
-    el.textContent = text;
+    el.textContent = t(key, vars);
     el.className = isError ? "err" : "";
 }
 
@@ -206,7 +210,7 @@ function showSlide(i) {
             nextSlide(); // skip the broken file
             return;
         }
-        setStatus("图片全部加载失败，请检查 " + withSlash(currentDir()), true);
+        setStatus("status.failed", { dir: withSlash(currentDir()) }, true);
         openSettings();
     };
     img.style.visibility = "hidden";
@@ -241,8 +245,9 @@ function restartTimer() {
 function setBookmarkState(state) {
     var b = $("bookmark");
     b.className = state;
-    b.setAttribute("aria-expanded", state === "active" ? "true" : "false");
-    b.setAttribute("aria-label", state === "active" ? "关闭设置" : "打开设置");
+    var open = state === "active";
+    b.setAttribute("aria-expanded", open ? "true" : "false");
+    b.setAttribute("aria-label", t(open ? "aria.close" : "aria.open"));
 }
 
 function bookmarkVisible() {
@@ -280,7 +285,7 @@ function cancelHideBookmark() {
 /* ----------------------------------------------------------- settings */
 
 function syncSettingsUI() {
-    $("iv-value").textContent = settings.interval + " 秒";
+    $("iv-value").textContent = t("unit.sec", { n: settings.interval });
     $("dir-input").value = currentDir();
 
     var presetHost = $("presets");
@@ -291,7 +296,7 @@ function syncSettingsUI() {
     }
 
     var shuffleBtn = $("shuffle-btn");
-    shuffleBtn.textContent = settings.shuffle ? "开" : "关";
+    shuffleBtn.textContent = t(settings.shuffle ? "shuffle.on" : "shuffle.off");
     shuffleBtn.setAttribute("aria-pressed", settings.shuffle ? "true" : "false");
 }
 
@@ -328,18 +333,27 @@ function setIntervalSeconds(v) {
     settings.interval = clampInterval(v);
     saveSettings();
     syncSettingsUI();
+    if (statusMsg && statusMsg.key === "status.count") {
+        setStatus("status.count", {
+            n: images.length,
+            iv: settings.interval
+        }, false);
+    }
     restartTimer();
 }
 
 function refreshList() {
-    setStatus("正在读取图片列表…", false);
+    setStatus("status.loading", null, false);
     loadImageList(function (count) {
         if (count === 0) {
-            setStatus("没有找到图片 — 请把 PNG/JPG 放进 " + withSlash(currentDir()), true);
+            setStatus("status.empty", { dir: withSlash(currentDir()) }, true);
             showSlide(0);
             return;
         }
-        setStatus("共 " + count + " 张图片 · 间隔 " + settings.interval + " 秒", false);
+        setStatus("status.count", {
+            n: count,
+            iv: settings.interval
+        }, false);
         showSlide(0);
         restartTimer();
     });
@@ -446,11 +460,11 @@ function exitApp() {
     if (k && k.messaging && k.messaging.sendStringMessage) {
         try {
             k.messaging.sendStringMessage("com.lab126.appmgrd", "stop", "app://" + APP_ID);
-            setStatus("已发送退出请求；若未退出，请点右上角 ✕", false);
+            setStatus("exit.sent", null, false);
             return;
         } catch (e) { /* fall through */ }
     }
-    setStatus("此环境无法退出；Kindle 上请点右上角 ✕", true);
+    setStatus("exit.local", null, true);
 }
 
 /* ---------------------------------------------------------- wiring */
@@ -467,6 +481,15 @@ function init() {
 
     syncSettingsUI();
     setBookmarkState("");
+
+    // Language switch re-renders everything stateful
+    window.I18N.onLangChange(function () {
+        syncSettingsUI();
+        setBookmarkState($("bookmark").className);
+        if (statusMsg) {
+            setStatus(statusMsg.key, statusMsg.vars, statusMsg.isError);
+        }
+    });
 
     // Bookmark handle
     $("bookmark").onclick = function (e) {
@@ -495,9 +518,9 @@ function init() {
 
     var presetHost = $("presets");
     presetHost.onclick = function (e) {
-        var t = e.target;
-        if (!t || !t.getAttribute) return;
-        var v = t.getAttribute("data-iv");
+        var el = e.target;
+        if (!el || !el.getAttribute) return;
+        var v = el.getAttribute("data-iv");
         if (v) setIntervalSeconds(parseInt(v, 10));
     };
 

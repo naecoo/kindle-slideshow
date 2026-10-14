@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -14,29 +14,29 @@
     </div>
 
     <!-- Bookmark = settings handle (revealed by tapping the screen) -->
-    <button id="bookmark" type="button" aria-label="打开设置" aria-expanded="false">
+    <button id="bookmark" type="button" aria-label="Open settings" aria-expanded="false">
         <span class="ribbon"></span>
     </button>
 
     <!-- Settings popover -->
     <div id="backdrop" class="hidden"></div>
-    <div id="settings" class="hidden" role="dialog" aria-label="设置">
+    <div id="settings" class="hidden" role="dialog" aria-label="Settings">
         <div class="head">
             <div class="eyebrow">SLIDESHOW</div>
-            <h1>设置</h1>
+            <h1 data-i18n="settings.title">Settings</h1>
         </div>
 
         <div class="row">
-            <span class="label">轮播间隔</span>
+            <span class="label" data-i18n="interval">Interval</span>
             <div class="stepper">
-                <button id="iv-minus" type="button" aria-label="减少间隔">−</button>
-                <span id="iv-value" class="value">10 秒</span>
-                <button id="iv-plus" type="button" aria-label="增加间隔">+</button>
+                <button id="iv-minus" type="button" aria-label="decrease interval">−</button>
+                <span id="iv-value" class="value">10 s</span>
+                <button id="iv-plus" type="button" aria-label="increase interval">+</button>
             </div>
         </div>
 
         <div class="row">
-            <span class="label">快捷</span>
+            <span class="label" data-i18n="presets">Presets</span>
             <div id="presets" class="presets">
                 <button type="button" data-iv="5">5</button>
                 <button type="button" data-iv="10">10</button>
@@ -47,25 +47,34 @@
         </div>
 
         <div class="row">
-            <span class="label">随机播放</span>
-            <button id="shuffle-btn" class="toggle" type="button" aria-pressed="false">关</button>
+            <span class="label" data-i18n="shuffle">Shuffle</span>
+            <button id="shuffle-btn" class="toggle" type="button" aria-pressed="false">Off</button>
         </div>
 
         <div class="row col">
-            <label class="label" for="dir-input">图片文件夹</label>
+            <label class="label" for="dir-input" data-i18n="folder">Image folder</label>
             <input id="dir-input" type="text" spellcheck="false" autocomplete="off" />
         </div>
 
-        <div id="status">正在读取图片列表…</div>
-
-        <div class="actions">
-            <button id="refresh-btn" type="button">刷新列表</button>
-            <button id="exit-btn" type="button">退出应用</button>
+        <div class="row">
+            <span class="label" data-i18n="lang.label">Language</span>
+            <div class="lang-seg" id="lang-toggle">
+                <button type="button" data-lang="en">EN</button>
+                <button type="button" data-lang="zh">中文</button>
+            </div>
         </div>
 
-        <div class="foot">轻点面板外部关闭 · 左右滑动切换图片</div>
+        <div id="status">Scanning image list…</div>
+
+        <div class="actions">
+            <button id="refresh-btn" type="button" data-i18n="refresh">Refresh list</button>
+            <button id="exit-btn" type="button" data-i18n="exit">Exit app</button>
+        </div>
+
+        <div class="foot" data-i18n="foot">Tap outside to close · swipe to change image</div>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="main.js"></script>
 </body>
 </html>

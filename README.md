@@ -22,6 +22,7 @@ settings for the rotation interval, shuffle, image folder, or exiting the app.
   - **Image folder**: defaults to `/mnt/us/screensaver/`, any directory works
   - **Exit app**
 - Settings persist in localStorage across launches
+- UI in **English (default)** and 简体中文 — switch inside the settings panel
 - The system ✕ in the top bar also exits the app
 
 ## Compatibility
