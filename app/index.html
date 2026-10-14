@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Slideshow</title>
+    <link rel="stylesheet" href="main.css" />
+</head>
+<body onload="init()">
+
+    <!-- Fullscreen photo stage -->
+    <div id="stage">
+        <img id="slide" alt="" />
+    </div>
+
+    <!-- Bookmark = settings handle (revealed by tapping the screen) -->
+    <button id="bookmark" type="button" aria-label="打开设置" aria-expanded="false">
+        <span class="ribbon"></span>
+    </button>
+
+    <!-- Settings popover -->
+    <div id="backdrop" class="hidden"></div>
+    <div id="settings" class="hidden" role="dialog" aria-label="设置">
+        <div class="head">
+            <div class="eyebrow">SLIDESHOW</div>
+            <h1>设置</h1>
+        </div>
+
+        <div class="row">
+            <span class="label">轮播间隔</span>
+            <div class="stepper">
+                <button id="iv-minus" type="button" aria-label="减少间隔">−</button>
+                <span id="iv-value" class="value">10 秒</span>
+                <button id="iv-plus" type="button" aria-label="增加间隔">+</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <span class="label">快捷</span>
+            <div id="presets" class="presets">
+                <button type="button" data-iv="5">5</button>
+                <button type="button" data-iv="10">10</button>
+                <button type="button" data-iv="15">15</button>
+                <button type="button" data-iv="30">30</button>
+                <button type="button" data-iv="60">60</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <span class="label">随机播放</span>
+            <button id="shuffle-btn" class="toggle" type="button" aria-pressed="false">关</button>
+        </div>
+
+        <div class="row col">
+            <label class="label" for="dir-input">图片文件夹</label>
+            <input id="dir-input" type="text" spellcheck="false" autocomplete="off" />
+        </div>
+
+        <div id="status">正在读取图片列表…</div>
+
+        <div class="actions">
+            <button id="refresh-btn" type="button">刷新列表</button>
+            <button id="exit-btn" type="button">退出应用</button>
+        </div>
+
+        <div class="foot">轻点面板外部关闭 · 左右滑动切换图片</div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

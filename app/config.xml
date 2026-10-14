@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget id="org.slideshow.kindle"
+        version="1.0.0"
+        viewmodes="application"
+        xmlns="http://www.w3.org/ns/widgets"
+        xmlns:kindle="http://kindle.amazon.com/ns/widget-extensions">
+
+    <name xml:lang="en">Slideshow</name>
+    <name xml:lang="zh">Slideshow 屏保轮播</name>
+    <description xml:lang="en">Fullscreen slideshow for your Kindle screensaver images.</description>
+    <description xml:lang="zh">全屏轮播 Kindle 屏保图片。</description>
+
+    <content src="index.html" />
+
+    <!-- Required for configureChrome (top bar close button). -->
+    <kindle:chrome>
+        <kindle:asset key="configureSearchBar" value="system" />
+    </kindle:chrome>
+
+    <!-- Tap + swipe so the app can react to page-turn style gestures. -->
+    <kindle:gestures>
+        <kindle:param name="tap" value="yes" properties="fire_on_tap:1 max_updown_delta:0" />
+        <kindle:param name="swipe" value="yes" />
+    </kindle:gestures>
+
+    <!-- Enable only the window.kindle APIs this app actually uses. -->
+    <feature name="http://kindle.amazon.com/apis" required="true">
+        <param name="appmgr" value="yes" />
+        <param name="gestures" value="yes" />
+        <param name="chrome" value="yes" />
+        <param name="messaging" value="yes" />
+    </feature>
+
+    <!-- Whitelist of LIPC services kindle.messaging may talk to. -->
+    <kindle:messaging>
+        <kindle:app name="com.lab126.chromebar" value="yes" />
+        <kindle:app name="com.lab126.appmgrd" value="yes" />
+    </kindle:messaging>
+
+    <kindle:resources>
+        <kindle:asset key="LocalStorageQuota" value="1048576" />
+    </kindle:resources>
+
+    <kindle:settings>
+        <kindle:setting name="internetRequired" value="no" />
+        <kindle:setting name="saveContext" value="no" />
+        <kindle:setting name="disable-wua-features" value="yes" />
+    </kindle:settings>
+
+</widget>
