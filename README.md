@@ -5,25 +5,27 @@
 **English** | [简体中文](README.zh-CN.md)
 
 Rotate the images in `/mnt/us/screensaver/` (`bg_ss00.png` …) fullscreen, with a
-reader-like feel: the screen shows nothing but the photo — **tap the screen to
-reveal the bookmark handle** in the top-left corner, then tap it to open
-settings for the rotation interval, shuffle, image folder, or exiting the app.
+reader-like feel: the screen shows nothing but the photo — **tap the
+top-right corner to open the fullscreen settings page** (KOReader-style)
+for the rotation interval, shuffle, image folder, language, or exiting
+the app. Slides are double-buffered, so e-ink changes frames without a
+blank flash.
 
 ## Features
 
 - Fullscreen rotation of screensaver images on a configurable interval;
-  **zero chrome by default — pure image only**
-- Tap the screen to summon the top-left bookmark handle; it auto-hides after
-  5 idle seconds
-- Swipe left/right or tap to turn pages like a reader
-- Settings popover behind the bookmark:
+  **no system chrome — pure image only**, cover-fit to the screen
+- Tap the **top-right corner** for a **fullscreen settings page**
+  (KOReader-style, no popup)
+- Swipe left/right or tap to turn pages like a reader; slide changes are
+  double-buffered (no blank frame between pictures)
+- Settings page:
   - **Interval**: 1–600 seconds, with 5 / 10 / 15 / 30 / 60 s presets
   - **Shuffle**: randomize image order
   - **Image folder**: defaults to `/mnt/us/screensaver/`, any directory works
   - **Exit app**
 - Settings persist in localStorage across launches
-- UI in **English (default)** and 简体中文 — switch inside the settings panel
-- The system ✕ in the top bar also exits the app
+- UI in **English (default)** and 简体中文 — switch inside the settings page
 
 ## Compatibility
 
@@ -42,7 +44,8 @@ kindle-slideshow/
 │   ├── index.html          # markup
 │   ├── main.css            # black-and-white e-ink styling
 │   └── main.js             # rotation / settings / gestures / Kindle bridge
-├── install_slideshow.sh    # installer scriptlet (one tap on device)
+├── install_slideshow.sh    # installer scriptlet (first install / update)
+├── slideshow.sh            # launcher scriptlet (everyday use)
 ├── LICENSE                 # MIT
 └── README.md
 ```
@@ -59,21 +62,20 @@ Prerequisites: a jailbroken device that can run `.sh` scriptlets from
    <repo>/app/  →  /mnt/us/documents/slideshow/
    ```
 
-2. Copy the installer scriptlet:
+2. Copy the scriptlets:
 
    ```
    <repo>/install_slideshow.sh  →  /mnt/us/documents/install_slideshow.sh
+   <repo>/slideshow.sh          →  /mnt/us/documents/slideshow.sh
    ```
 
 3. Eject the USB connection, then open **Install Slideshow** from the Kindle
-   library. The screen shows `Slideshow installed. Launching...` and the app
-   starts.
+   library (first install / updates only). The screen shows
+   `Slideshow installed. Launching...` and the app starts.
 
-To relaunch later, tap the same scriptlet again (reinstalling is safe), or run:
-
-```sh
-lipc-set-prop com.lab126.appmgrd start app://org.slideshow.kindle
-```
+To launch later, tap **Slideshow** in the library — it just starts the app,
+no reinstall. (Or run `lipc-set-prop com.lab126.appmgrd start
+app://org.slideshow.kindle` from a shell.)
 
 ## Usage
 
@@ -81,12 +83,12 @@ The screen shows **only the image** — no controls at all:
 
 | Action | Effect |
 | --- | --- |
-| Tap the screen | Reveals the bookmark handle (auto-hides after 5 s idle) |
-| Tap the bookmark | Opens the settings panel (tap it again or outside to close) |
-| Tap the image while the handle is visible | Next image |
-| Swipe left / right | Next / previous image (also summons the handle) |
+| Tap the **top-right corner** | Open / close the fullscreen settings page |
+| Tap anywhere else | Next image |
+| Swipe left / right | Next / previous image |
 | Keyboard ← → | Previous / next image (external keyboard) |
-| System ✕ in the top bar | Exit the app |
+| Esc | Close the settings page |
+| **Exit app** (in settings) | Leaves the app (pull down the top system menu as a fallback) |
 
 Default interval is 10 seconds. Images come from `/mnt/us/screensaver/` —
 the same folder the system screensaver uses, so adding or removing files

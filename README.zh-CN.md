@@ -5,22 +5,22 @@
 [English](README.md) | **简体中文**
 
 把你在 `/mnt/us/screensaver/` 里的屏保图片（`bg_ss00.png` …）全屏轮播展示。
-屏幕默认只显示图片、没有任何控件：**轻点屏幕唤出左上角书签**，点书签打开设置
-——调整轮播间隔、随机播放、图片文件夹，或退出应用。
+屏幕默认只显示图片、没有任何控件：**轻触右上角直接打开全屏设置页**
+（KOReader 式，非弹窗）——调整轮播间隔、随机播放、图片文件夹、语言，或退出应用。
+图片切换采用双缓冲，墨水屏换页不出现白帧。
 
 ## 功能
 
-- 全屏轮播屏保图片，自动按设定间隔切换；**默认零控件，纯图片显示**
-- 轻点屏幕唤出左上角书签入口，5 秒无操作自动隐藏
-- 左右滑动 / 轻点切换上一张、下一张（阅读器式翻页）
-- 书签按钮弹出设置面板：
+- 全屏轮播屏保图片，自动按设定间隔切换；**无系统边栏，纯图片铺满全屏**
+- **轻触右上角**直接打开**全屏设置页**（KOReader 式，无弹窗）
+- 左右滑动 / 轻点切换上一张、下一张（阅读器式翻页）；切换双缓冲，无白帧
+- 设置页包含：
   - **轮播间隔**：1–600 秒，带 5 / 10 / 15 / 30 / 60 秒快捷档
   - **随机播放**：打乱图片顺序
   - **图片文件夹**：默认 `/mnt/us/screensaver/`，可指向其它目录
   - **退出应用**
 - 设置自动保存（localStorage），下次打开仍然生效
-- 界面支持**英文（默认）**与简体中文 —— 设置面板内切换
-- 右上角系统 ✕ 也可以退出应用
+- 界面支持**英文（默认）**与简体中文 —— 设置页内切换
 
 ## 兼容性
 
@@ -39,7 +39,8 @@ kindle-slideshow/
 │   ├── index.html          # 界面结构
 │   ├── main.css            # 墨水屏黑白样式
 │   └── main.js             # 轮播 / 设置 / 手势 / Kindle 桥接
-├── install_slideshow.sh    # 安装脚本（Kindle 上点一下即可）
+├── install_slideshow.sh    # 安装脚本（首装 / 更新用）
+├── slideshow.sh            # 启动脚本（日常使用）
 ├── LICENSE                 # MIT
 └── README.md
 ```
@@ -55,16 +56,18 @@ kindle-slideshow/
    <repo>/app/  →  /mnt/us/documents/slideshow/
    ```
 
-2. 把 `install_slideshow.sh` 拷入：
+2. 把两个脚本拷入：
 
    ```
    <repo>/install_slideshow.sh  →  /mnt/us/documents/install_slideshow.sh
+   <repo>/slideshow.sh          →  /mnt/us/documents/slideshow.sh
    ```
 
-3. 弹出 USB，在 Kindle 图书馆里点开 **Install Slideshow**。
+3. 弹出 USB，在 Kindle 图书馆里点开 **Install Slideshow**（仅首装 / 更新时用）。
    屏幕提示 `Slideshow installed. Launching...` 后应用会自动打开。
 
-之后再次启动：重新点击该脚本即可（重复安装是安全的），或用命令行启动：
+之后日常启动：直接点图书馆里的 **Slideshow**（只启动、不重装）。
+也可用命令行：
 
 ```sh
 lipc-set-prop com.lab126.appmgrd start app://org.slideshow.kindle
@@ -76,12 +79,12 @@ lipc-set-prop com.lab126.appmgrd start app://org.slideshow.kindle
 
 | 操作 | 效果 |
 | --- | --- |
-| 轻点屏幕 | 出现左上角书签（5 秒无操作自动隐藏） |
-| 轻点书签 | 打开设置面板（再次轻点或面板外部轻点关闭） |
-| 书签显示时轻点图片 | 下一张 |
-| 左右滑动 | 下一张 / 上一张（同时唤出书签） |
+| 轻触**右上角** | 打开 / 关闭全屏设置页 |
+| 轻触其它位置 | 下一张 |
+| 左右滑动 | 下一张 / 上一张 |
 | 键盘 ← → | 上一张 / 下一张（外接键盘） |
-| 右上角 ✕ | 退出应用 |
+| Esc | 关闭设置页 |
+| 设置页里的**退出应用** | 退出（失灵时可下拉顶部系统菜单返回） |
 
 默认每 10 秒自动切换一张，图片来自 `/mnt/us/screensaver/`
 —— 与系统屏保共用同一个文件夹，增删图片两边同时生效。
@@ -107,16 +110,18 @@ python3 -m http.server 8000
   `org.slideshow.kindle`，再通过 `com.lab126.appmgrd` 的 LIPC `start` 属性启动。
 - 图片列表通过隐藏 iframe 读取目录列表并解析 `<a href>` 获得
   （Kindle 的 `file://` 目录列表会包一层 `<pre>`，解析时已兼容）。
-- 顶栏与退出走 `kindle.messaging` → `com.lab126.chromebar`（关闭按钮为系统处理）。
+- 图片切换采用双缓冲：后层加载完成后再原子换层，全程无白帧
+- 退出走 `kindle.messaging` → `com.lab126.appmgrd` 的 `stop` 消息；
+  失灵时下拉顶部系统菜单返回主页
 - 手势走 `kindle.gestures.onswipe` / `ontap`，并叠加 DOM 点击兜底。
 
 ## 待真机验证
 
 以下行为在无设备环境下实现，首次真机运行时请确认：
 
-1. **设置面板里的「退出应用」**：通过
+1. **设置页里的「退出应用」**：通过
    `sendStringMessage("com.lab126.appmgrd", "stop", …)` 尝试退出。
-   若固件不响应此消息，顶栏系统 ✕ 始终可退出（保底方案）。
+   若固件不响应此消息，可下拉屏幕顶部系统菜单返回主页（保底方案）。
 2. **`internetRequired=no`**：若应用无法启动，把 `config.xml` 中该项改回
    `yes` 再装一次。
 3. **`ontap` 事件坐标**：若真机上手势与 DOM 点击同时触发，观察是否有

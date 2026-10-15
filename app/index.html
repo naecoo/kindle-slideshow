@@ -8,22 +8,20 @@
 </head>
 <body onload="init()">
 
-    <!-- Fullscreen photo stage -->
+    <!-- Fullscreen photo stage (double-buffered) -->
     <div id="stage">
-        <img id="slide" alt="" />
+        <img id="slide-a" class="slide" alt="" />
+        <img id="slide-b" class="slide" alt="" />
     </div>
 
-    <!-- Bookmark = settings handle (revealed by tapping the screen) -->
-    <button id="bookmark" type="button" aria-label="Open settings" aria-expanded="false">
-        <span class="ribbon"></span>
-    </button>
-
-    <!-- Settings popover -->
-    <div id="backdrop" class="hidden"></div>
+    <!-- Fullscreen settings page (KOReader-style, toggled from top-right) -->
     <div id="settings" class="hidden" role="dialog" aria-label="Settings">
         <div class="head">
-            <div class="eyebrow">SLIDESHOW</div>
-            <h1 data-i18n="settings.title">Settings</h1>
+            <div class="head-text">
+                <div class="eyebrow">SLIDESHOW</div>
+                <h1 data-i18n="settings.title">Settings</h1>
+            </div>
+            <button id="close-settings" type="button" aria-label="Close settings">✕</button>
         </div>
 
         <div class="row">
@@ -71,7 +69,7 @@
             <button id="exit-btn" type="button" data-i18n="exit">Exit app</button>
         </div>
 
-        <div class="foot" data-i18n="foot">Tap outside to close · swipe to change image</div>
+        <div class="foot" data-i18n="foot">Tap the top-right corner to toggle this menu · swipe changes image</div>
     </div>
 
     <script src="i18n.js"></script>

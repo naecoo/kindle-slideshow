@@ -12,11 +12,6 @@
 
     <content src="index.html" />
 
-    <!-- Required for configureChrome (top bar close button). -->
-    <kindle:chrome>
-        <kindle:asset key="configureSearchBar" value="system" />
-    </kindle:chrome>
-
     <!-- Tap + swipe so the app can react to page-turn style gestures. -->
     <kindle:gestures>
         <kindle:param name="tap" value="yes" properties="fire_on_tap:1 max_updown_delta:0" />
@@ -27,13 +22,11 @@
     <feature name="http://kindle.amazon.com/apis" required="true">
         <param name="appmgr" value="yes" />
         <param name="gestures" value="yes" />
-        <param name="chrome" value="yes" />
         <param name="messaging" value="yes" />
     </feature>
 
     <!-- Whitelist of LIPC services kindle.messaging may talk to. -->
     <kindle:messaging>
-        <kindle:app name="com.lab126.chromebar" value="yes" />
         <kindle:app name="com.lab126.appmgrd" value="yes" />
     </kindle:messaging>
 

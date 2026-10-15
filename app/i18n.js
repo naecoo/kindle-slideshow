@@ -16,7 +16,7 @@
             "lang.label": "Language",
             "refresh": "Refresh list",
             "exit": "Exit app",
-            "foot": "Tap outside to close · swipe to change image",
+            "foot": "Tap the top-right corner to toggle this menu · swipe changes image",
             "unit.sec": "{n} s",
 
             "status.loading": "Scanning image list…",
@@ -24,10 +24,9 @@
             "status.count": "{n} images · interval {iv} s",
             "status.failed": "All images failed to load — check {dir}",
 
-            "exit.sent": "Exit requested; if it stays, tap ✕ in the top bar",
-            "exit.local": "Cannot exit here; on Kindle tap ✕ in the top bar",
+            "exit.sent": "Exit requested; if it stays, pull down the top system menu to go home",
+            "exit.local": "Cannot exit here — pull down the top system menu to go home",
 
-            "aria.open": "Open settings",
             "aria.close": "Close settings"
         },
         zh: {
@@ -41,7 +40,7 @@
             "lang.label": "语言",
             "refresh": "刷新列表",
             "exit": "退出应用",
-            "foot": "轻点面板外部关闭 · 左右滑动切换图片",
+            "foot": "轻触右上角开关本菜单 · 左右滑动切换图片",
             "unit.sec": "{n} 秒",
 
             "status.loading": "正在读取图片列表…",
@@ -49,10 +48,9 @@
             "status.count": "共 {n} 张图片 · 间隔 {iv} 秒",
             "status.failed": "图片全部加载失败，请检查 {dir}",
 
-            "exit.sent": "已发送退出请求；若未退出，请点右上角 ✕",
-            "exit.local": "此环境无法退出；Kindle 上请点右上角 ✕",
+            "exit.sent": "已发送退出请求；若未退出，可下拉屏幕顶部系统菜单返回",
+            "exit.local": "未能自动退出 —— 可下拉屏幕顶部系统菜单返回",
 
-            "aria.open": "打开设置",
             "aria.close": "关闭设置"
         }
     };

@@ -1,8 +1,11 @@
 /* Slideshow for Kindle — fullscreen screensaver image rotator.
-   The screen shows nothing but the photo: tap once to reveal the
-   bookmark handle, which auto-hides after a few idle seconds.
-   UI strings come from i18n.js (default English); every window.kindle
-   call is guarded so the app also runs in a desktop browser. */
+   UI strings come from i18n.js (default English). Interaction follows
+   KOReader: tap the top-right corner for a fullscreen settings page;
+   every other tap advances the slideshow. Slides are double-buffered
+   so e-ink refreshes never show a blank frame.
+
+   Every window.kindle call is guarded so the app also runs in a
+   desktop browser for development. */
 
 /* global window, document, I18N */
 
@@ -11,9 +14,8 @@ var DEFAULT_DIR = "/mnt/us/screensaver/";
 var SETTINGS_KEY = "slideshow.settings.v1";
 var MIN_INTERVAL = 1;
 var MAX_INTERVAL = 600;
-var HANDLE_HIDE_MS = 5000;   // idle delay before the bookmark disappears
-var CORNER_W = 140;          // tap zone that opens settings
-var CORNER_H = 120;
+var TOP_ZONE_Y = 150;      // px from the top that counts as the top zone
+var TOP_RIGHT_X = 0.55;    // fraction of width for the settings hot corner
 
 var t = window.I18N.t;
 
@@ -26,11 +28,11 @@ var settings = {
 var images = [];       // [{ name, url }]
 var index = 0;
 var timer = null;
-var handleHideTimer = null;
 var dirOverride = null; // ?dir= for development
 var lastTapAt = 0;      // debounce: DOM click + kindle.gestures.ontap
-var consecutiveErrors = 0; // broken files are skipped, not stared at
+var consecutiveErrors = 0;
 var statusMsg = null;   // { key, vars, isError } — re-rendered on lang change
+var front = "a";        // which slide element is currently visible
 
 /* ---------------------------------------------------------------- utils */
 
@@ -192,19 +194,40 @@ function shuffleInPlace(arr) {
 
 /* --------------------------------------------------------- slideshow */
 
+// Cover-fit an image into the viewport (no object-fit on old WebKit).
+function fitCover(img) {
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var iw = img.naturalWidth;
+    var ih = img.naturalHeight;
+    if (!vw || !vh || !iw || !ih) return;
+    var s = Math.max(vw / iw, vh / ih);
+    var w = Math.round(iw * s);
+    var h = Math.round(ih * s);
+    img.style.width = w + "px";
+    img.style.height = h + "px";
+    img.style.left = Math.round((vw - w) / 2) + "px";
+    img.style.top = Math.round((vh - h) / 2) + "px";
+}
+
+// Double-buffered slide change: the next image is fully rendered into the
+// hidden buffer first, then the two layers swap in one step. The visible
+// frame is never blank — the e-ink-friendly way to change pictures.
 function showSlide(i) {
-    if (!images.length) {
-        $("slide").removeAttribute("src");
-        return;
-    }
+    if (!images.length) return;
     index = ((i % images.length) + images.length) % images.length;
 
-    var img = $("slide");
-    img.onload = function () {
-        img.style.visibility = "visible";
+    var backEl = (front === "a") ? $("slide-b") : $("slide-a");
+    var frontEl = (front === "a") ? $("slide-a") : $("slide-b");
+
+    backEl.onload = function () {
+        fitCover(backEl);
+        backEl.className = "slide on";
+        frontEl.className = "slide";
+        front = (front === "a") ? "b" : "a";
         consecutiveErrors = 0;
     };
-    img.onerror = function () {
+    backEl.onerror = function () {
         consecutiveErrors++;
         if (consecutiveErrors < images.length) {
             nextSlide(); // skip the broken file
@@ -213,21 +236,16 @@ function showSlide(i) {
         setStatus("status.failed", { dir: withSlash(currentDir()) }, true);
         openSettings();
     };
-    img.style.visibility = "hidden";
-    img.src = images[index].url;
-
-    // Preload the next one so rotation feels instant.
-    if (images.length > 1) {
-        var next = new Image();
-        next.src = images[(index + 1) % images.length].url;
-    }
+    backEl.src = images[index].url;
 }
 
 function nextSlide() {
+    if (!images.length) return;
     showSlide(index + 1);
 }
 
 function prevSlide() {
+    if (!images.length) return;
     showSlide(index - 1);
 }
 
@@ -239,54 +257,12 @@ function restartTimer() {
     timer = window.setInterval(nextSlide, settings.interval * 1000);
 }
 
-/* ------------------------------------------------- bookmark handle */
-
-// States: "" (hidden — pure image), "visible", "active" (settings open)
-function setBookmarkState(state) {
-    var b = $("bookmark");
-    b.className = state;
-    var open = state === "active";
-    b.setAttribute("aria-expanded", open ? "true" : "false");
-    b.setAttribute("aria-label", t(open ? "aria.close" : "aria.open"));
-}
-
-function bookmarkVisible() {
-    var c = $("bookmark").className;
-    return c === "visible" || c === "active";
-}
-
-function showBookmark() {
-    if ($("bookmark").className === "active") return; // settings open: keep active
-    setBookmarkState("visible");
-    scheduleHideBookmark();
-}
-
-function hideBookmark() {
-    if ($("bookmark").className === "visible") {
-        setBookmarkState("");
-    }
-}
-
-function scheduleHideBookmark() {
-    if (handleHideTimer) window.clearTimeout(handleHideTimer);
-    handleHideTimer = window.setTimeout(function () {
-        handleHideTimer = null;
-        hideBookmark();
-    }, HANDLE_HIDE_MS);
-}
-
-function cancelHideBookmark() {
-    if (handleHideTimer) {
-        window.clearTimeout(handleHideTimer);
-        handleHideTimer = null;
-    }
-}
-
 /* ----------------------------------------------------------- settings */
 
 function syncSettingsUI() {
     $("iv-value").textContent = t("unit.sec", { n: settings.interval });
     $("dir-input").value = currentDir();
+    $("close-settings").setAttribute("aria-label", t("aria.close"));
 
     var presetHost = $("presets");
     var buttons = presetHost.getElementsByTagName("button");
@@ -301,10 +277,7 @@ function syncSettingsUI() {
 }
 
 function openSettings() {
-    cancelHideBookmark();
     $("settings").className = "";
-    $("backdrop").className = "";
-    setBookmarkState("active");
     syncSettingsUI();
     if (!images.length) {
         refreshList();
@@ -313,8 +286,6 @@ function openSettings() {
 
 function closeSettings() {
     $("settings").className = "hidden";
-    $("backdrop").className = "hidden";
-    setBookmarkState(""); // back to a pure image
 }
 
 function settingsOpen() {
@@ -347,7 +318,6 @@ function refreshList() {
     loadImageList(function (count) {
         if (count === 0) {
             setStatus("status.empty", { dir: withSlash(currentDir()) }, true);
-            showSlide(0);
             return;
         }
         setStatus("status.count", {
@@ -361,40 +331,9 @@ function refreshList() {
 
 /* ----------------------------------------------------- kindle bridges */
 
-function configureChrome() {
-    var k = window.kindle;
-    if (!k || !k.messaging || !k.messaging.sendMessage) return;
-    try {
-        k.messaging.sendMessage("com.lab126.chromebar", "configureChrome", {
-            appId: APP_ID,
-            topNavBar: {
-                template: "title",
-                title: "Slideshow",
-                buttons: [
-                    { id: "KPP_CLOSE", state: "enabled", handling: "system" }
-                ]
-            },
-            systemMenu: {
-                clientParams: {
-                    profile: {
-                        name: "default",
-                        items: [],
-                        selectionMode: "none",
-                        closeOnUse: true
-                    }
-                }
-            }
-        });
-    } catch (e) { /* chrome config is best-effort */ }
-}
-
 function installKindleHooks() {
     var k = window.kindle;
     if (!k) return;
-
-    if (k.appmgr) {
-        k.appmgr.ongo = configureChrome;
-    }
 
     if (k.gestures) {
         // Documented: onswipe(direction, pageX, pageY). Directions vary by
@@ -404,15 +343,13 @@ function installKindleHooks() {
             if (settingsOpen()) return;
             if (d.indexOf("left") !== -1) {
                 nextSlide();
-                showBookmark();
             } else if (d.indexOf("right") !== -1) {
                 prevSlide();
-                showBookmark();
             }
         };
 
         // ontap event payload is undocumented; DOM click is primary.
-        // This is a guarded secondary path, debounced against double fire.
+        // Guarded secondary path, debounced against double fire.
         k.gestures.ontap = function (event) {
             if (!event) return;
             var x = event.pageX;
@@ -421,38 +358,24 @@ function installKindleHooks() {
             handleTap(x, y);
         };
     }
-
-    configureChrome();
 }
 
 // Tap logic shared by DOM clicks and kindle.gestures.ontap.
-//
-//   handle hidden   -> reveal the bookmark (no page change)
-//   handle visible  -> corner tap: open settings; elsewhere: next image
-//   settings open   -> close (gesture path; DOM path goes through backdrop)
+//   top-right -> toggle the fullscreen settings page
+//   anywhere else -> next image
 function handleTap(x, y) {
     var now = new Date().getTime();
     if (now - lastTapAt < 300) return;
     lastTapAt = now;
 
-    if (settingsOpen()) {
-        closeSettings();
+    if (settingsOpen()) return; // settings covers the stage; DOM can't tap through
+
+    var vw = window.innerWidth;
+    if (y <= TOP_ZONE_Y && x >= vw * TOP_RIGHT_X) {
+        openSettings();
         return;
     }
-
-    var inCorner = x <= CORNER_W && y <= CORNER_H;
-
-    if (bookmarkVisible()) {
-        if (inCorner) {
-            openSettings();
-            return;
-        }
-        nextSlide();
-        showBookmark(); // keep it up, reset the hide countdown
-        return;
-    }
-
-    showBookmark(); // first tap only summons the handle
+    nextSlide();
 }
 
 function exitApp() {
@@ -480,24 +403,20 @@ function init() {
     }
 
     syncSettingsUI();
-    setBookmarkState("");
 
     // Language switch re-renders everything stateful
     window.I18N.onLangChange(function () {
         syncSettingsUI();
-        setBookmarkState($("bookmark").className);
         if (statusMsg) {
             setStatus(statusMsg.key, statusMsg.vars, statusMsg.isError);
         }
     });
 
-    // Bookmark handle
-    $("bookmark").onclick = function (e) {
-        if (e && e.stopPropagation) e.stopPropagation();
-        toggleSettings();
+    // Settings page controls
+    $("close-settings").onclick = function () {
+        closeSettings();
     };
 
-    // Tap target: the photo itself
     $("stage").onclick = function (e) {
         var x = e.pageX;
         var y = e.pageY;
@@ -508,11 +427,6 @@ function init() {
         handleTap(x, y);
     };
 
-    $("backdrop").onclick = function () {
-        closeSettings();
-    };
-
-    // Settings controls
     $("iv-minus").onclick = function () { setIntervalSeconds(settings.interval - 1); };
     $("iv-plus").onclick = function () { setIntervalSeconds(settings.interval + 1); };
 
@@ -558,15 +472,9 @@ function init() {
         if (key === 27) {            // Esc
             if (settingsOpen()) closeSettings();
         } else if (key === 37) {     // ←
-            if (!settingsOpen()) {
-                prevSlide();
-                showBookmark();
-            }
+            if (!settingsOpen()) prevSlide();
         } else if (key === 39) {     // →
-            if (!settingsOpen()) {
-                nextSlide();
-                showBookmark();
-            }
+            if (!settingsOpen()) nextSlide();
         }
     };
 
